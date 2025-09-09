@@ -1,6 +1,6 @@
 name: flutter_dojah_kyc
 description: A webview implementation of dojah financial. Dojah helps all companies build fintech solutions by making it easy, safe and reliable for people to connect their financial data to apps and services..
-version: 0.4.8
+version: 0.5.2
 homepage: https://github.com/dojah-inc/flutter-kyc
 
 environment:
@@ -15,8 +15,6 @@ dependencies:
   permission_handler: ^11.0.0
   location: ^5.0.3
   js: ^0.6.3
-
-
 
 
 dev_dependencies:

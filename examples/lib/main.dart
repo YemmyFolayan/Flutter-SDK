@@ -77,7 +77,11 @@ class _HomePageState extends State<HomePage> {
 
                 final configObj = {
 
-                  "widget_id": "658309e2a89938003f717f09"
+                  "widget_id": "6745d57641ec4e95715fc664"
+
+                  //Prod : 6745d57641ec4e95715fc664
+
+                  //Dev: 685ae6af77b21f99fe0c2e9a
 
                 };
 
@@ -98,7 +102,6 @@ class _HomePageState extends State<HomePage> {
               
 
                 DojahKYC? _dojahKYC;
-
                 ///Use your appId and publicKey
                 _dojahKYC = DojahKYC(
                   appId: appId,
