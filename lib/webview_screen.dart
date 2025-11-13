@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -13,6 +12,7 @@ class DojahKYC {
   final String type;
   final int? amount;
   final String? referenceId;
+  final String? title;
   final Map<String, dynamic>? userData;
   final Map<String, dynamic>? metaData;
   final Map<String, dynamic>? govData;
@@ -24,6 +24,7 @@ class DojahKYC {
     required this.appId,
     required this.publicKey,
     required this.type,
+    this.title,
     this.userData,
     this.config,
     this.metaData,
@@ -52,6 +53,7 @@ class DojahKYC {
           config: config,
           amount: amount,
           referenceId: referenceId,
+          title: title,
           success: (result) {
             onSuccess!(result);
           },
@@ -73,6 +75,7 @@ class WebviewScreen extends StatefulWidget {
   final String type;
   final int? amount;
   final String? referenceId;
+  final String? title;
   final Map<String, dynamic>? userData;
   final Map<String, dynamic>? metaData;
   final Map<String, dynamic>? govData;
@@ -93,6 +96,7 @@ class WebviewScreen extends StatefulWidget {
     this.config,
     this.amount,
     this.referenceId,
+    this.title,
     required this.success,
     required this.error,
     required this.close,
@@ -103,37 +107,37 @@ class WebviewScreen extends StatefulWidget {
 }
 
 class _WebviewScreenState extends State<WebviewScreen> {
-  final Set<Factory<OneSequenceGestureRecognizer>> gestureRecognizers = {
-    Factory(() => EagerGestureRecognizer())
-  };
   final GlobalKey webViewKey = GlobalKey();
   late InAppWebViewController _webViewController;
   double progress = 0;
   String url = '';
   late PullToRefreshController pullToRefreshController;
 
+  // Enhanced webview settings to handle keyboard and scrolling
   InAppWebViewSettings options = InAppWebViewSettings(
-    allowsInlineMediaPlayback: true,
-    cacheEnabled: false, // Disable cache
-    clearCache: true, // Clear cache
+    // Scroll settings
     verticalScrollBarEnabled: true,
-    horizontalScrollBarEnabled: true, // Enable horizontal scrollbar
-    supportZoom: true, // Allow zooming (optional)
-    builtInZoomControls: true, // Enable built-in zoom controls
-    displayZoomControls: false, // Hide display of zoom controls
-    disableHorizontalScroll:
-        false, // Ensure horizontal scrolling is not disabled
-    disableVerticalScroll: false, // Ensure vertical scrolling is not disabled
-    transparentBackground: false, // Default background for visibility
+    horizontalScrollBarEnabled: true,
+    supportZoom: false, // Disable zoom to prevent layout issues
+    builtInZoomControls: false,
+    displayZoomControls: false,
+    
+    // Keyboard handling settings
+    disableHorizontalScroll: false,
+    disableVerticalScroll: false,
+    transparentBackground: true,
     javaScriptEnabled: true,
-    mediaPlaybackRequiresUserGesture: false,
-    useHybridComposition: true,
-    domStorageEnabled: true,
+    
+    // Additional settings for better keyboard handling
+    useWideViewPort: true, // Important for responsive design
+    loadWithOverviewMode: true, // Zoom out to fit content
+    allowsInlineMediaPlayback: true,
+    cacheEnabled: false,
+    clearCache: true,
   );
 
   bool isGranted = false;
   bool isLocationGranted = false;
-
   bool isLocationPermissionGranted = false;
   dynamic locationData;
   dynamic timeZone;
@@ -145,7 +149,6 @@ class _WebviewScreenState extends State<WebviewScreen> {
     super.initState();
     getPermissions();
     pullToRefreshController = PullToRefreshController(
-      //settings: PullToRefreshSettings(color: Colors.blue),
       onRefresh: () async {
         if (Platform.isAndroid) {
           _webViewController.reload();
@@ -182,129 +185,203 @@ class _WebviewScreenState extends State<WebviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      // KEY FIX: Prevent resizing when keyboard appears
+      resizeToAvoidBottomInset: false,
+      
+      appBar: widget.title != null
+        ? AppBar(
+            title: Text(widget.title!),
+          )
+        : null,
+      
       body: isGranted
-          ? InAppWebView(
-              key: webViewKey,
-              gestureRecognizers: gestureRecognizers,
-              initialSettings: options,
-              initialData: InAppWebViewInitialData(
-                baseUrl: WebUri("https://widget.dojah.io"),
-                historyUrl: WebUri("https://widget.dojah.io"),
-                mimeType: "text/html",
-                data: """
-                      <html lang="en">
-                        <head>
-                            <meta charset="UTF-8">
-                                <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, shrink-to-fit=1"/>
-                              
-                            <title>Dojah Inc.</title>
-                        </head>
-                        <body>
-                  
-   
-                       <script src="https://widget.dojah.io/widget.js"></script>
+          ? Column(
+              children: [
+                // Progress indicator
+                if (progress < 1.0)
+                  LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.grey[300],
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).primaryColor,
+                    ),
+                  ),
+                
+                // Expanded webview to take remaining space
+                Expanded(
+                  child: InAppWebView(
+                    key: webViewKey,
+                    initialSettings: options,
+                    initialData: InAppWebViewInitialData(
+                      baseUrl: WebUri("https://widget.dojah.io"),
+                      historyUrl: WebUri("https://widget.dojah.io"),
+                      mimeType: "text/html",
+                      data: """
+                            <html lang="en">
+                              <head>
+                                  <meta charset="UTF-8">
+                                  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no"/>
+                                  
+                                  <!-- Additional CSS to handle keyboard and scrolling -->
+                                  <style>
+                                    body {
+                                      margin: 0;
+                                      padding: 0;
+                                      overflow: auto;
+                                      -webkit-overflow-scrolling: touch;
+                                      height: 100%;
+                                      position: relative;
+                                    }
+                                    html {
+                                      height: 100%;
+                                      overflow: auto;
+                                    }
+                                    /* Ensure scrollbars are visible */
+                                    ::-webkit-scrollbar {
+                                      width: 8px;
+                                      height: 8px;
+                                    }
+                                    ::-webkit-scrollbar-track {
+                                      background: #f1f1f1;
+                                    }
+                                    ::-webkit-scrollbar-thumb {
+                                      background: #888;
+                                      border-radius: 4px;
+                                    }
+                                    ::-webkit-scrollbar-thumb:hover {
+                                      background: #555;
+                                    }
+                                  </style>
+                                  
+                                  <title>Dojah Inc.</title>
+                              </head>
+                              <body>
+                                <script src="https://widget.dojah.io/widget.js"></script>
+                                <script>
+                                          const options = {
+                                              app_id: "${widget.appId}",
+                                              p_key: "${widget.publicKey}",
+                                              type: "${widget.type}",
+                                              reference_id: "${widget.referenceId}",
+                                              config: ${json.encode(widget.config ?? {})},
+                                              user_data: ${json.encode(widget.userData ?? {})},
+                                              gov_data: ${json.encode(widget.govData ?? {})},
+                                              gov_id: ${json.encode(widget.govId ?? {})},
+                                              location: ${json.encode(locationObject ?? {})},
+                                              metadata: ${json.encode(widget.metaData ?? {})},
+                                              onSuccess: function (response) {
+                                              window.flutter_inappwebview.callHandler('onSuccessCallback', response)
+                                              },
+                                              onError: function (error) {
+                                                window.flutter_inappwebview.callHandler('onErrorCallback', error)
+                                              },
+                                              onClose: function () {
+                                                window.flutter_inappwebview.callHandler('onCloseCallback', 'close')
+                                              },
+                                          }
 
-                      
-                        <script>
-                                  const options = {
-                                      app_id: "${widget.appId}",
-                                      p_key: "${widget.publicKey}",
-                                      type: "${widget.type}",
-                                      reference_id: "${widget.referenceId}",
-                                      config: ${json.encode(widget.config ?? {})},
-                                      user_data: ${json.encode(widget.userData ?? {})},
-                                      gov_data: ${json.encode(widget.govData ?? {})},
-                                      gov_id: ${json.encode(widget.govId ?? {})},
-                                      location: ${json.encode(locationObject ?? {})},
-                                      metadata: ${json.encode(widget.metaData ?? {})},
-                                      onSuccess: function (response) {
-                                      window.flutter_inappwebview.callHandler('onSuccessCallback', response)
-                                      },
-                                      onError: function (error) {
-                                        window.flutter_inappwebview.callHandler('onErrorCallback', error)
-                                      },
-                                      onClose: function () {
-                                        window.flutter_inappwebview.callHandler('onCloseCallback', 'close')
-                                      }
-                                  }
+                                            const connect = new Connect(options);
+                                            connect.setup();
+                                            connect.open();
+                                      </script>
+                              </body>
+                            </html>
+                        """,
+                    ),
+                    initialUrlRequest: URLRequest(
+                      url: WebUri("https://widget.dojah.io"),
+                    ),
+                    pullToRefreshController: pullToRefreshController,
+                    onWebViewCreated: (controller) {
+                      _webViewController = controller;
 
-                                    const connect = new Connect(options);
-                                    connect.setup();
-                                    connect.open();
-                              </script>
-                        </body>
-                      </html>
-                  """,
-              ),
-              initialUrlRequest: URLRequest(
-                url: WebUri("https://widget.dojah.io"),
-              ),
-              pullToRefreshController: pullToRefreshController,
-              onWebViewCreated: (controller) {
-                _webViewController = controller;
+                      _webViewController.addJavaScriptHandler(
+                        handlerName: 'onSuccessCallback',
+                        callback: (response) {
+                          widget.success(response);
+                        },
+                      );
 
-                _webViewController.addJavaScriptHandler(
-                  handlerName: 'onSuccessCallback',
-                  callback: (response) {
-                    widget.success(response);
-                  },
-                );
+                      _webViewController.addJavaScriptHandler(
+                        handlerName: 'onCloseCallback',
+                        callback: (response) {
+                          widget.close(response);
+                        },
+                      );
 
-                _webViewController.addJavaScriptHandler(
-                  handlerName: 'onCloseCallback',
-                  callback: (response) {
-                    widget.close(response);
-                    // if (response.first == 'close') {
-                    //   Navigator.pop(context);
-                    // }
-                  },
-                );
-
-                _webViewController.addJavaScriptHandler(
-                  handlerName: 'onErrorCallback',
-                  callback: (error) {
-                    widget.error(error);
-                  },
-                );
-              },
-              onPermissionRequest: Platform.isAndroid
-                  ? null
-                  : (controller, origin) async {
-                      return PermissionResponse(
-                        resources: [
-                          PermissionResourceType.CAMERA,
-                          PermissionResourceType.MICROPHONE,
-                        ],
-                        action: PermissionResponseAction.GRANT,
+                      _webViewController.addJavaScriptHandler(
+                        handlerName: 'onErrorCallback',
+                        callback: (error) {
+                          widget.error(error);
+                        },
                       );
                     },
-              onLoadStop: (controller, url) {
-                pullToRefreshController.endRefreshing();
-              },
-              onReceivedError: (controller, url, code) {
-                pullToRefreshController.endRefreshing();
-              },
-              onProgressChanged: (controller, progress) {
-                if (progress == 100) {
-                  pullToRefreshController.endRefreshing();
-                }
-                setState(() {
-                  this.progress = progress / 100;
-                });
-              },
-              androidOnPermissionRequest:
-                  (controller, origin, resources) async {
-                return PermissionRequestResponse(
-                    resources: resources,
-                    action: PermissionRequestResponseAction.GRANT);
-              },
-              androidOnGeolocationPermissionsShowPrompt:
-                  (controller, origin) async {
-                return GeolocationPermissionShowPromptResponse(
-                    allow: true, origin: origin, retain: true);
-              },
-              onConsoleMessage: (controller, consoleMessage) {},
+                    onPermissionRequest: Platform.isAndroid
+                        ? null
+                        : (controller, origin) async {
+                            return PermissionResponse(
+                              resources: [
+                                PermissionResourceType.CAMERA,
+                                PermissionResourceType.MICROPHONE,
+                              ],
+                              action: PermissionResponseAction.GRANT,
+                            );
+                          },
+                    onLoadStop: (controller, url) async {
+                      pullToRefreshController.endRefreshing();
+                      
+                      // Inject additional JavaScript to handle keyboard behavior
+                      await controller.evaluateJavascript(source: """
+                        // Prevent page shift when keyboard appears
+                        document.body.style.position = 'relative';
+                        document.body.style.minHeight = '100%';
+                        
+                        // Ensure scroll behavior is proper
+                        if (document.scrollingElement) {
+                          document.scrollingElement.style.overflow = 'auto';
+                        }
+                        
+                        // Add event listener for focus events to handle keyboard
+                        document.addEventListener('focusin', function(e) {
+                          // Let the webview handle scrolling naturally
+                          setTimeout(function() {
+                            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+                              e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                          }, 300);
+                        });
+                      """);
+                    },
+                    onReceivedError: (controller, url, code) {
+                      pullToRefreshController.endRefreshing();
+                    },
+                    onProgressChanged: (controller, progress) {
+                      if (progress == 100) {
+                        pullToRefreshController.endRefreshing();
+                      }
+                      setState(() {
+                        this.progress = progress / 100;
+                      });
+                    },
+                    androidOnPermissionRequest:
+                        (controller, origin, resources) async {
+                      return PermissionRequestResponse(
+                          resources: resources,
+                          action: PermissionRequestResponseAction.GRANT);
+                    },
+                    androidOnGeolocationPermissionsShowPrompt:
+                        (controller, origin) async {
+                      return GeolocationPermissionShowPromptResponse(
+                          allow: true, origin: origin, retain: true);
+                    },
+                    onConsoleMessage: (controller, consoleMessage) {
+                      if (kDebugMode) {
+                        print("WebView Console: ${consoleMessage.message}");
+                      }
+                    },
+                  ),
+                ),
+              ],
             )
           : const Center(child: CircularProgressIndicator()),
     );

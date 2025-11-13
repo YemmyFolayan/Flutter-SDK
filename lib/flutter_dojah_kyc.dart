@@ -9,6 +9,7 @@ class DojahKYC {
   final String type;
   final int? amount;
   final String? referenceId;
+  final String? title;
   final Map<String, dynamic>? userData;
   final Map<String, dynamic>? metaData;
   final Map<String, dynamic>? govData;
@@ -29,6 +30,7 @@ class DojahKYC {
     this.govId,
     this.amount,
     this.referenceId,
+    this.title,
     this.onCloseCallback,
   });
 
@@ -50,6 +52,7 @@ class DojahKYC {
           config: config,
           amount: amount,
           referenceId: referenceId,
+          title: title,
           success: (result) {
             onSuccess!(result);
           },
