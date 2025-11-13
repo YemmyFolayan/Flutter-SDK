@@ -7,7 +7,6 @@ void main() async {
   runApp(const MyApp());
 
 // await location.requestService();
-
 }
 
 class MyApp extends StatelessWidget {
@@ -50,12 +49,11 @@ class _HomePageState extends State<HomePage> {
   final appId = ""; //your application ID
   final publicKey = ""; //your public key
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text("Dojah Widget"),
+        title: const Text("Dojah Widget"),
           //backgroundColor: Colors.yellow,
         ),
         body: Center(
@@ -67,26 +65,28 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(fontSize: 20.0),
               ),
               onPressed: () {
-                final userData = {
-                  "first_name": "John",
-                  "last_name": "Doe",
-                  "dob": "1901-01-01",
-                  "email": "johndoe@gmail.com"
-                 
-                };
+                // final userData = {
+                //   "first_name": "John",
+                //   "last_name": "Doe",
+                //   "dob": "1901-01-01",
+                //   "email": "johndoe@gmail.com"
+
+                // };
 
                 final configObj = {
+                  "widget_id": "6915992c42df3c4e1e530263"
 
-                  "widget_id": "6745d57641ec4e95715fc664"
+                  //Live Prod: 68cd52d75ad4cbccda272ad3
 
-                  //Prod : 6745d57641ec4e95715fc664
+                  //Sandbox Prod : 6745d57641ec4e95715fc664
 
-                  //Dev: 685ae6af77b21f99fe0c2e9a
+                  //Sandbox Dev: 685ae6af77b21f99fe0c2e9a
 
+                  // Live Dev: 68c13f9f7edfd208bb3686f9
+
+                  //prod : <script src="https://widget.dojah.io/widget.js"></script>
+                  //dev :           <script src="https://dev-widget.dojah.services/widget.js"></script>
                 };
-
-
-
 
                 final metaData = {
                   "name": "ade",
@@ -99,25 +99,25 @@ class _HomePageState extends State<HomePage> {
                 //   "mobile": "0811234567"
                 // };
 
-              
-
                 DojahKYC? _dojahKYC;
+
                 ///Use your appId and publicKey
                 _dojahKYC = DojahKYC(
                   appId: appId,
                   publicKey: publicKey,
                   type: "custom",
-                  userData: userData,
+                  //userData: userData,
                   metaData: metaData,
                   config: configObj,
                   // govData: govData,
                   // referenceId: referenceId
+                  //title: "Test App"
                 );
 
                 print(json.encode(configObj));
-            
+
                 //print(userData);
-            
+
                 _dojahKYC.open(context,
                     onSuccess: (result) => print(result),
                     onClose: (close) => print('Widget Closed'),
